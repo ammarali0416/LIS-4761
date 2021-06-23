@@ -1,0 +1,158 @@
+---
+title: "Week 11: Lab - Build Your Own Shiny App"
+author: 'Ammar Ali'
+date: '3/28/2021'
+output: html_document
+---
+
+---
+
+# Instructions
+Create a scatter plot interactive application. In this application, use the 
+census data from earlier in the book, and let the user determine the X-axis, 
+the Y-axis, the color (optional), and the size based on what the user would 
+like to see. To do this, you will need multiple-choice menus, one for each 
+selection the user needs to make. You can do this by following the direction 
+written in the text book. Enjoy. 
+
+**For your information:**   
+The data is available through this link: 
+
+* http://www2.census.gov/programs-surveys/popest/tables/2010-2011/state/totals/nst-est2011-01.csv
+
+
+Add all of your libraries that you use for this assignment here.
+```{r setup}
+# Add your library below.
+
+library(shiny)
+library(ggplot2)
+```
+
+---
+
+# Step 1 - Build the UI
+Build the UI below.
+
+```{r, "Step 1"}
+ui <- fluidPage(
+  
+  # Write your code here.
+  selectInput("variable1", "X-axis:",
+              c("july population" = "Pop2011",
+                #"region of country" = "region",
+                "change in population" = "popChange",
+                "Percent change in population" = 
+                'percentChange')),
+  selectInput("variable2", "Y-axis:",
+              c("july population" = "Pop2011",
+                #"region of country" = "region",
+                "change in population" = "popChange",
+                "Percent change in population" = 
+                'percentChange')),
+  selectInput("variable3", "Size:",
+              c("july population" = "Pop2011",
+                #"region of country" = "region",
+                "change in population" = "popChange",
+                "Percent change in population" = 
+                'percentChange')),
+  plotOutput("plot")
+  )
+```
+
+---
+
+# Step 2 - Build the Server
+Build the Server below.
+```{r, "Step 2"}
+server <- function(input, output) {
+  readStates <- function(urlToRead = "http://www2.census.gov/programs-surveys/popest/tables/2010-2011/state/totals/nst-est2011-01.csv")
+{
+  #1. You need to read a URL, not a local file to your computer.
+  
+  #2. The file is a dataset on state populations (within the United States).
+  #"http://www2.census.gov/programs-surveys/popest/tables/2010-2011/state/totals/nst-est2011-01.csv"
+  
+  states <- read.csv(url(urlToRead))
+  
+  #Step 2: Clean the dataframe: within Function 1
+  
+  #3. Note the issues that need to be fixed (removing columns, removing rows, changing column names).
+  
+  #4. Within your function, make sure there are 51 rows (one per state + the district of Columbia). Make sure there are only 5 columns with the columns having the following names (stateName, Census, Estimates, Pop2010, Pop2011).
+  
+  #5. Make sure the last four columns are numbers (i.e. not strings).
+
+  ## Remove the first 8 rows
+  states <- states[-1:-8, ]
+  # Resets the rownames
+  rownames(states) = NULL
+  
+  ## Move Puerto Rico one row up
+  states[52, ] <- states[53, ] 
+  
+  ## Delete the last 5 rows
+  states <- states[-53:-58, ]
+  
+  ## Remove the last 6 columns
+  states <- states[ , -6:-10]
+  
+  # Fix the first column
+  ## Change name to statenames
+  names(states)[names(states) == "table.with.row.headers.in.column.A.and.column.headers.in.rows.3.through.4...leading.dots.indicate.sub.parts."] <- "StateName"
+  
+  ## Remove the period
+  states$StateName <- gsub("\\.", "", states$StateName)
+  
+  # Fix the second column
+  ## Change name to Census
+  names(states)[names(states) == "X"] <- "Census"
+  
+  # Remove the comma and change to numeric
+  states$Census <- as.numeric(gsub(",", "", states$Census))
+  
+  # Fix the third column
+  names(states)[names(states) == "X.1"] <- "Estimates"
+  states$Estimates <- as.numeric(gsub(",", "", states$Estimates))
+  
+  # Fix the fourth column
+  names(states)[names(states) == "X.2"] <- "Pop2010"
+  states$Pop2010 <- as.numeric(gsub(",", "", states$Pop2010))
+  
+  # Fix the fifth column
+  names(states)[names(states) == "X.3"] <- "Pop2011"
+  states$Pop2011 <- as.numeric(gsub(",", "", states$Pop2011))
+  
+  return(states)
+  
+}
+  
+ # Write your code here.
+  dfStates <- readStates()
+  dfStates <- dfStates[dfStates$stateName != "District of Columbia", ]
+  dfStates <- dfStates[dfStates$stateName != "Puerto Rico", ]
+
+  #dfStates$region <- state.region
+  dfStates$stateName <- 
+    tolower(dfStates$stateName)
+  dfStates$popChange <- dfStates$Pop2011 - dfStates$Pop2010
+  dfStates$percentChange <- dfStates$popChange/dfStates$Pop2010 * 100
+  
+  output$plot <- renderPlot(
+    ggplot(dfStates) +
+      geom_point(aes_string(x = input$variable1, y = input$variable2, size = input$variable3))
+  )
+}
+
+```
+
+---
+
+# Step 3 - Create the Shiny App
+Deploy the shiny app.
+```{r, "Step 3"}
+
+# Write your code here.
+shinyApp(ui = ui, server = server)
+
+```

@@ -1,0 +1,117 @@
+---
+title: "Week 5: Lab - Word Cloud Chapter Challenge"
+author: "Ammar Ali"
+date: "2/13/2021"
+output: html_document
+---
+
+---
+
+# Instructions
+Create a word cloud using the `text` column from a real twitter dataset 
+(sample.csv).
+
+---
+
+```{r setup, message = FALSE}
+# Add your library below.
+library(dplyr)
+library(tidyr)
+library(qdapRegex)
+library(tm)
+library(qdap)
+library(wordcloud)
+library(readr)
+
+
+```
+
+# Step 1. Load and Clean the Data
+Load in the `sample.csv` dataset from this project's data folder. 
+Please make sure you transform the document to lowercase, delete stopwords & numbers & punctuation (1 point).
+
+```{r, "Step 1"}
+# Write your code below.
+sample <- read_csv("data/sample.csv")
+
+# Getting the tweet text
+twt_text <- sample$text
+
+# Remove any URLs from the tweets
+twt_txt_nourl <- rm_twitter_url(twt_text)
+
+# Keeping only non-special characters
+twt_txt_chrs <- gsub('[^A-Za-z]', " ", twt_txt_nourl)
+
+# Converting to corpus
+twt_corpus <- twt_txt_chrs %>%
+                VectorSource() %>%
+                Corpus()
+
+# Converting test to lowercase
+twt_corpus_lwr <- tm_map(twt_corpus, tolower)
+
+# Removing Stop words
+twt_corpus_stpwd <- tm_map(twt_corpus_lwr, removeWords, stopwords('english'))
+
+# Removing additional spaces
+twt_corpus_final <- tm_map(twt_corpus_stpwd, stripWhitespace)
+
+```
+
+---
+
+# Step 2. Adjust the Stopwords
+Add "can" and "just" to the stopwords list (1 point). 
+
+```{r, "Step 2"}
+# Write your code below.
+# Creating a Vector of custom stop words
+custom_stop <- c("can", "just")
+
+# Removing custom stop words
+twt_corpus_refined <- tm_map(twt_corpus_final, removeWords, custom_stop)
+
+```
+
+---
+
+# Step 3. Adjust the Theme
+Use five colors and "Accent" for color theme (1 point).
+
+```{r, "Step 3"}
+# Write your code below.
+# Colorful word cloud
+wordcloud(twt_corpus_refined, max.words = 100,
+          colors = brewer.pal(5,"Accent"), scale = c(2.5,.5),
+          random.order = FALSE)
+
+```
+
+---
+
+# Step 4. Analysis
+Does the word cloud convey the key points of the document? (1 point). 
+
+
+> It shows that the tweets were about the airline Virgin America, and the 
+  experience passengers had while traveling with this airline.
+
+---
+
+# Step 5. Compile
+Submit the compiled file. 
+The wordcloud may prevent you from compiling. If so, do the following: 
+
+```
+jpeg('p1.jpg')  
+wordcloud(cloudFrame.t$word, cloudFrame.t$freq)  
+dev.off()
+```
+This will make the graphs save in the current working directory. 
+
+```{r, "Step 5"}
+# Write your code below, if necessary.
+
+
+```

@@ -1,0 +1,356 @@
+---
+title: "Week 6: Lab - Text Mining (Sentiment Analysis)"
+author: 'Ammar Ali'
+date: '2/28/2021'
+output: html_document
+---
+
+---
+
+# Instructions
+Conduct sentiment analysis on MLK's speech to determine how positive/negative
+his speech was. Split his speech into four quartiles to see how that sentiment 
+changes over time.Create two bar charts to display your results.
+
+---
+
+```{r setup, message = FALSE}
+# Add your library below.
+library(dplyr)
+library(tidyr)
+library(qdapRegex)
+library(tm)
+library(qdap)
+library(ggplot2)
+
+
+```
+
+# Step 1 - Read in the positive and negative word files
+
+## Step 1.1 - Find the files
+Find two files (one for positive words and one for negative words) from the UIC
+website. These files are about halfway down the page, listed as “A list of 
+English positive and negative opinion words or sentiment words”. Use the link 
+below:
+
+* http://www.cs.uic.edu/~liub/FBS/sentiment-analysis.html  
+
+Save these files in your "data" folder. 
+
+```{r, "Step 1.1"}
+# No code necessary; Save the files in your project's data folder.
+```
+
+## Step 1.2 - Create vectors
+Create two vectors of words, one for the positive words and one for the 
+negative words.
+
+```{r, "Step 1.2"}
+# Write your code below.
+positive <- read.table("C:/Users/ammar/Documents/School/LIS 4761/week6_Lab/data/opinion-lexicon-English/opinion-lexicon-English/positive-words.txt", skip =30)
+negative <- read.table("C:/Users/ammar/Documents/School/LIS 4761/week6_Lab/data/opinion-lexicon-English/opinion-lexicon-English/negative-words.txt", skip = 30)
+
+```
+
+## Step 1.3 - Clean the files
+Note that when reading in the word files, there might be lines at the start 
+and/or the end that will need to be removed (i.e. you should clean your dataset).
+
+```{r, "Step 1.3"}
+# Write your code below.
+# The skip argument in the previous two read.table() calls took care of this problem.
+#  In each .txt file, the list of words began after line 30, hence the setting of skip to 30
+#  in the read.table functions.
+
+```
+
+
+---
+
+
+# Step 2: Process in the MLK speech
+
+## Step 2.1 - Find and read in the file.
+Find MLK's speech on the AnalyticTech website. Use the link below:
+
+* http://www.analytictech.com/mb021/mlk.html-
+
+Read in the file using the XML package. 
+Otherwise, cut and paste the document into a .txt file.
+
+```{r, "Step 2.1"}
+# Write your code below.
+
+
+```
+
+## Step 2.2 - Parse the files
+If you parse the html file using the XML package, the following code might help:
+
+```
+# Read and parse HTML file
+
+doc.html = htmlTreeParse('http://www.analytictech.com/mb021/mlk.htm', 
+                         useInternal = TRUE)
+
+# Extract all the paragraphs (HTML tag is p, starting at
+# the root of the document). Unlist flattens the list to
+# create a character vector.
+
+doc.text = unlist(xpathApply(doc.html, '//p', xmlValue))
+
+# Replace all \n by spaces
+doc.text = gsub('\\n', ' ', doc.text)
+
+# Replace all \r by spaces
+doc.text = gsub('\\r', ' ', doc.text)
+```
+
+```{r, "Step 2.2"}
+# Write your code below, if necessary.
+# Read and parse HTML file
+library(XML)
+doc.html = htmlTreeParse('http://www.analytictech.com/mb021/mlk.htm', 
+                         useInternal = TRUE)
+
+# Extract all the paragraphs (HTML tag is p, starting at
+# the root of the document). Unlist flattens the list to
+# create a character vector.
+
+doc.text = unlist(xpathApply(doc.html, '//p', xmlValue))
+
+# Replace all \n by spaces
+doc.text = gsub('\\n', ' ', doc.text)
+
+# Replace all \r by spaces
+doc.text = gsub('\\r', ' ', doc.text)
+
+```
+
+## Step 2.3 - Create a term matrix
+Create a term matrix.
+
+```{r, "Step 2.3"}
+# Write your code below.
+# Keeping only non-special characters
+doc_txt_chrs <- gsub('[^A-Za-z]', " ", doc.text)
+
+doc_corpus <- doc.text %>%
+                VectorSource() %>%
+                Corpus()
+doc_corpus_lwr <- tm_map(doc_corpus, tolower)
+# Removing Stop words
+doc_corpus_stpwd <- tm_map(doc_corpus_lwr, removeWords, stopwords('english'))
+
+
+# Removing additional spaces
+doc_corpus_final <- tm_map(doc_corpus_stpwd, stripWhitespace)
+
+
+
+# Creating the TDM
+doc_tdm <- TermDocumentMatrix(doc_corpus_final) %>% as.matrix()
+```
+## Step 2.4 - Create a list
+Create a list of counts for each word.
+
+```{r, "Step 2.4"}
+# Write your code below.
+wordCounts <- rowSums(doc_tdm)
+
+```
+
+---
+
+# Step 3: Positive words
+Determine how many positive words were in the speech. Scale the number based on 
+the total number of words in the speech. 
+**Hint:** 
+One way to do this is to use `match()` and then `which()`.
+
+```{r, "Step 3"}
+# Write your code below.
+totalWords <- sum(wordCounts)
+words <- names(wordCounts)
+pos_match <- match(words, positive.words, nomatch = 0)
+pos_match_count <- length(which(pos_match != 0))
+pos_percentage <- pos_match_count/totalWords
+
+# Percentage of positive words
+pos_percentage * 100
+
+```
+
+---
+
+# Step 4: Negative words
+Determine how many negative words were in the speech. Scale the number based on the total number of words in the speech.  
+**Hint:** This is basically the same as Step 3.
+
+```{r, , "Step 4"}
+# Write your code below.
+neg_match <- match(words, negative.words, nomatch = 0)
+neg_match_count <- length(which(neg_match != 0))
+neg_percentage <- neg_match_count/totalWords
+
+# Percentage of negative words
+neg_percentage * 100
+
+```
+
+---
+
+# Step 5: Get Quartile values
+Redo the “positive” and “negative” calculations for each 25% of the speech by
+following the steps below.
+
+## 5.1 Compare the results in a graph
+Compare the results (e.g., a simple bar chart of the 4 numbers).  
+For each quarter of the text, you calculate the positive and negative ratio, 
+as was done in Step 4 and Step 5.  
+The only extra work is to split the text to four equal parts, then 
+visualize the positive and negative ratios by plotting. 
+
+The final graphs should look like below:  
+![Step 5.1 - Negative](data/week6lab1.PNG)
+![Step 5.1 - Positive](data/week6lab2.PNG)
+
+**HINT:** 
+The code below shows how to start the first 25% of the speech.
+Finish the analysis and use the same approach for the rest of the speech.
+
+```
+# Step 5: Redo the positive and negative calculations for each 25% of the speech
+  # define a cutpoint to split the document into 4 parts; round the number to get an interger
+  cutpoint <- round(length(words.corpus)/4)
+ 
+# first 25%
+  # create word corpus for the first quarter using cutpoints
+  words.corpus1 <- words.corpus[1:cutpoint]
+  # create term document matrix for the first quarter
+  tdm1 <- TermDocumentMatrix(words.corpus1)
+  # convert tdm1 into a matrix called "m1"
+  m1 <- as.matrix(tdm1)
+  # create a list of word counts for the first quarter and sort the list
+  wordCounts1 <- rowSums(m1)
+  wordCounts1 <- sort(wordCounts1, decreasing=TRUE)
+  # calculate total words of the first 25%
+```
+
+```{r}
+# Write your code below.
+cutpoint <- round(length(doc_corpus_final)/4)
+
+# first 25%
+   # create word corpus for the first quarter using cutpoints
+  words.corpus1 <- doc_corpus_final[1:cutpoint]
+  # create term document matrix for the first quarter
+  tdm1 <- TermDocumentMatrix(words.corpus1)
+  # convert tdm1 into a matrix called "m1"
+  m1 <- as.matrix(tdm1)
+  # create a list of word counts for the first quarter and sort the list
+  wordCounts1 <- rowSums(m1)
+  wordCounts1 <- sort(wordCounts1, decreasing=TRUE)
+  # calculate total words of the first 25%
+  totalWords_25 <- sum(wordCounts1)
+  # percentages of negative and positive words
+  pos_match1 <- match(names(wordCounts1), positive.words, nomatch = 0)
+  pos_match1_count <- length(which(pos_match1 != 0))
+  pos_match1_per <- pos_match1_count / totalWords_25
+  neg_match1 <- match(names(wordCounts1), negative.words, nomatch = 0)
+  neg_match1_count <- length(which(neg_match1 != 0))
+  neg_match1_per <- neg_match1_count / totalWords_25
+
+# second 25%
+   # create word corpus for the first quarter using cutpoints
+  words.corpus2 <- doc_corpus_final[cutpoint + 1 : cutpoint *2]
+  # create term document matrix for the first quarter
+  tdm2 <- TermDocumentMatrix(words.corpus2)
+  # convert tdm1 into a matrix called "m1"
+  m2 <- as.matrix(tdm2)
+  # create a list of word counts for the first quarter and sort the list
+  wordCounts2 <- rowSums(m2)
+  wordCounts2 <- sort(wordCounts2, decreasing=TRUE)
+  # calculate total words of the first 25%
+  totalWords_50 <- sum(wordCounts2)
+  # percentages of negative and positive words
+  pos_match2 <- match(names(wordCounts2), positive.words, nomatch = 0)
+  pos_match2_count <- length(which(pos_match2 != 0))
+  pos_match2_per <- pos_match1_count / totalWords_50
+  neg_match2 <- match(names(wordCounts2), negative.words, nomatch = 0)
+  neg_match2_count <- length(which(neg_match2 != 0))
+  neg_match2_per <- neg_match2_count / totalWords_50
+  
+# third 25%
+   # create word corpus for the first quarter using cutpoints
+  words.corpus3 <- doc_corpus_final[(cutpoint*2) + 1: cutpoint * 3]
+  # create term document matrix for the first quarter
+  tdm3 <- TermDocumentMatrix(words.corpus3)
+  # convert tdm1 into a matrix called "m1"
+  m3 <- as.matrix(tdm3)
+  # create a list of word counts for the first quarter and sort the list
+  wordCounts3 <- rowSums(m3)
+  wordCounts3 <- sort(wordCounts3, decreasing=TRUE)
+  # calculate total words of the first 25%
+  totalWords_75 <- sum(wordCounts3)
+  # percentages of negative and positive words
+  pos_match3 <- match(names(wordCounts3), positive.words, nomatch = 0)
+  pos_match3_count <- length(which(pos_match3 != 0))
+  pos_match3_per <- pos_match3_count / totalWords_75
+  neg_match3 <- match(names(wordCounts3), negative.words, nomatch = 0)
+  neg_match3_count <- length(which(neg_match3 != 0))
+  neg_match3_per <- neg_match3_count / totalWords_75
+
+# fourth 25%
+   # create word corpus for the first quarter using cutpoints
+  words.corpus4 <- doc_corpus_final[(cutpoint*3) + 1: length(doc_corpus_final)]
+  # create term document matrix for the first quarter
+  tdm4 <- TermDocumentMatrix(words.corpus4)
+  # convert tdm1 into a matrix called "m1"
+  m4 <- as.matrix(tdm4)
+  # create a list of word counts for the first quarter and sort the list
+  wordCounts4 <- rowSums(m4)
+  wordCounts4 <- sort(wordCounts4, decreasing=TRUE)
+  # calculate total words of the first 25%
+  totalWords_100 <- sum(wordCounts4)
+  # percentages of negative and positive words
+  pos_match4 <- match(names(wordCounts4), positive.words, nomatch = 0)
+  pos_match4_count <- length(which(pos_match4 != 0))
+  pos_match4_per <- pos_match4_count / totalWords_100
+  neg_match4 <- match(names(wordCounts4), negative.words, nomatch = 0)
+  neg_match4_count <- length(which(neg_match4 != 0))
+  neg_match4_per <- neg_match1_count / totalWords_100
+  
+# Creating the dataframes for the graphs
+  pos_ratio_df <- data.frame(
+    "Portion" = c('1st 25%', '2nd 25%', '3rd 25%', '4th 25%'),
+    "Ratios" = c(pos_match1_per, pos_match2_per, pos_match3_per, pos_match4_per)
+  )
+  
+  neg_ratio_df <- data.frame(
+    "Portion" = c('1st 25%', '2nd 25%', '3rd 25%', '4th 25%'),
+    "Ratios" = c(neg_match1_per, neg_match2_per, neg_match3_per, neg_match4_per)
+  )
+  
+pos_plot <- ggplot(pos_ratio_df, aes(x = Portion, y = Ratios)) +
+  geom_bar(stat = 'identity') + 
+  ggtitle("Positive Ratio")
+
+neg_plot <- ggplot(neg_ratio_df, aes(x = Portion, y = Ratios)) +
+  geom_bar(stat = 'identity') +
+  ggtitle("Negative Ratio")
+
+pos_plot
+neg_plot
+  
+```
+
+# 5.2 Analysis
+
+What do you see from the positive/negative ratio in the graph? 
+State what you learned from the MLK speech using the sentiment analysis results: 
+
+> [Other than in the third quarter of the speech, the graphs show that the positive
+and negative sentiment ratios are about the same for each portion of the speech.]
+

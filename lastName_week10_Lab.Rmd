@@ -1,0 +1,231 @@
+---
+title: "Week 10: Lab - Using SVM on an Air Quality Dataset "
+author: '[Name]'
+date: '[Date]'
+output: html_document
+---
+
+---
+
+# Instructions
+Conduct **predictive analytics** on the Air Quality dataset to predict changes in
+`ozone` values.You will split the Air Quality dataset into a "**training set**" and
+a "**test set**". Use various techniques, such as **Kernal-Based Support Vector Machines** (KSVM), **Support Vector Machines** (SVM), **Linear Modelling** (LM), 
+and **Naive Bayes** (NB). Determine which technique is best for the dataset.
+
+Add all of your libraries that you use for this homework here.
+```{r setup}
+# Add your library below.
+#install.packages("e1071")
+library(e1071)
+#install.packages("kernlab")
+library(kernlab)
+# library(tidyverse)
+```
+
+# Step 1: Load the data (0.5 point)
+
+Let's go back and analyze the air quality dataset (we used that dataset previously 
+in the visualization lab). Remember to think about how to deal with the NAs in the data. 
+Replace NAs with the mean value of the column.
+
+```{r, "Step 1"}
+# Write your code below.
+air <- data.frame(airquality)
+# Replacing NAs with the mean value of air$Ozone and air$Solar.R for each respective column.
+air$Ozone[which(is.na(air$Ozone))] <- round(mean(air$Ozone[which(!is.na(air$Ozone))]))
+air$Solar.R[which(is.na(air$Solar.R))] <- round(mean(air$Solar.R[which(!is.na(air$Solar.R))]))
+
+```
+
+---
+
+# Step 2: Create train and test data sets (0.5 point)
+
+Using techniques discussed in class (or in the video), create two datasets – 
+one for training and one for testing.
+
+```{r, "Step 2"}
+# Write your code below.
+nrows <- nrow(air)
+cutPoint <- floor(nrows/3 * 2)
+rand <- sample(1:nrows)
+air.train <- air[rand[1:cutPoint], ]
+air.test <- air[rand[(cutPoint + 1):nrows], ]
+
+```
+
+---
+
+# Step 3: Build a model using KSVM and visualize the results (2 points)
+
+## Step 3.1 - Build a model
+Using `ksvm()`, create a model to try to predict changes in the `ozone` values. 
+You can use all the possible attributes, or select the attributes that you think 
+would be the most helpful. Of course, use the training dataset.
+
+```{r, "Step 3.1"}
+# Write your code below.
+model1 <- ksvm(Ozone ~ ., data = air.train)
+model1
+
+```
+
+## Step 3.2 - Test the model and find the RMSE
+Test the model using the test dataset and find the **Root Mean Squared Error** (RMSE).
+Root Mean Squared Error formula here:  
+* http://statweb.stanford.edu/~susan/courses/s60/split/node60.html 
+
+```{r, "Step 3.2"}
+# Write your code below.
+pred1 <- predict(model1, air.test)
+results1 <- data.frame(pred1, air.test$Ozone)
+rmse <- (sum(results1$pred1 - results1$air.test.Ozone)^2) / 51
+rmse
+```
+
+## Step 3.3 - Plot the results. 
+Use a scatter plot. Have the x-axis represent `Temp`, the y-axis represent `Wind`, 
+the point size and color represent the error (as defined by the actual ozone level 
+minus the predicted ozone level). It should look similar to this:
+
+![Step 3.3 Graph - Air Quality](data/week11lab1.PNG)
+
+
+```{r, "Step 3.3"}
+# Write your code below.
+plot1 <- ggplot(air, aes(x = Temp, y = Wind)) +
+  geom_point(color = (results1$)
+
+```
+
+## Step 3.4 - Compute models and plot the results for `svm()` and `lm()`
+Use `svm()` from in the `e1071` package and `lm()` from Base R to computer two 
+new predictive models. Generate similar charts for each model.
+
+### Step 3.4.1 - Compute model for `svm()`
+```{r, "Step 3.4.1"}
+# Write your code below.
+
+
+```
+
+### Step 3.4.2 - Compute model for `lm()`
+```{r, "Step 3.4.2"}
+# Write your code below.
+
+
+```
+
+## Step 3.5 - Plot all three model results together
+Show the results for the KSVM, SVM, and LM models in one window. Use the `grid.arrange()`
+function to do this. All three models should be scatterplots. 
+
+```{r, "Step 3.5"}
+# Write your code below.
+
+
+```
+
+---
+
+# Step 4: Create a “goodOzone” variable (1 point)
+
+This variable should be either 0 or 1. It should be 0 if the ozone is below the 
+average for all the data observations, and 1 if it is equal to or above the 
+average ozone observed.
+
+```{r, "Step 4"}
+# Write your code below.
+
+
+```
+
+---
+
+# Step 5: Predict "good" and "bad" ozone days. (3 points)
+Let's see if we can do a better job predicting “good” and “bad” days.
+
+## Step 5.1 - Build a model 
+Using `ksvm()`, create a model to try to predict `goodOzone`. 
+You can use all the possible attributes, or select the attributes that you think 
+would be the most helpful. Of course, use the training dataset.
+```{r, "Step 5.1"}
+# Write your code below.
+
+
+```
+
+## Step 5.2 - Test the model and find the percent of `goodOzone`
+Test the model on the test dataset, and compute the percent of “goodOzone” that
+was correctly predicted.
+```{r, "Step 5.2"}
+# Write your code below.
+
+
+```
+
+## Step 5.3 - Plot the results
+```
+# determine the prediction is "correct" or "wrong" for each case,   
+
+# create a new dataframe contains correct, tempreture and wind, and goodZone
+
+# change column names
+  colnames(Plot_ksvm) <- c("correct","Temp","Wind","goodOzone","Predict")
+# plot result using ggplot
+```
+Use a scatter plot. Have the x-axis represent `Temp`, the y-axis represent 
+`Wind`, the shape representing what was predicted (good or bad day), the color 
+representing the actual value of `goodOzone` (i.e. if the actual ozone level was
+good) and the size represent if the prediction was correct (larger symbols should 
+be the observations the model got wrong). The plot should look similar to this:
+
+![Step 5.3 Graph - Good Ozone](data/week11lab1.PNG)
+
+
+ ```{r, "Step 5.3"}
+# Write your code below.
+
+
+```
+
+## Step 5.4 - Compute models and plot the results for `svm()` and `lm()`
+Use `svm()` from in the e1071 package and `lm()` from Base R to computer two 
+new predictive models. Generate similar charts for each model.
+
+### Step 5.4.1 - Compute model for `svm()`
+```{r, "Step 5.4.1"}
+# Write your code below.
+
+
+```
+
+### Step 5.4.2 - Compute model for `naiveBayes()`
+```{r, "Step 5.4.2"}
+# Write your code below.
+
+
+```
+
+## Step 5.5 - Plot all three model results together
+Show the results for the KSVM, SVM, and LM models in one window. Use the `grid.arrange()`
+function to do this. All three models should be scatterplots. 
+
+```{r, "Step 5.5"}
+# Write your code below.
+
+
+```
+
+
+---
+
+# Step 6: Which are the best Models for this data? (2 points)
+
+Review what you have done and state which is the best and why.
+
+> [ Write your answer here. ]
+
+# Step 7: Upload your compiled file. (1 point)
+Your compiled file should contain the answers to the questions.

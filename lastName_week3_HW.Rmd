@@ -1,0 +1,300 @@
+---
+title: 'Week 3: HW - Visualizing Air Quality Analysis'
+author: 'Ammar Ali'
+date: '1/31/2021'
+output: html_document
+---
+
+---
+
+# Instructions
+
+Use the built-in `airquality` R dataset to visualize the air quality in 1973.
+Explore the patterns in the data by creating histograms, boxplots, line graphs, 
+heatmaps, and scatterplots. 
+
+Load the libraries `ggplot2` and `reshape2` in the setup chunk below.
+
+---
+
+```{r setup, message = FALSE}
+# Add your library below.
+library(ggplot2)
+library(reshape2)
+library(dplyr)
+
+
+```
+
+# Step 1 - Load the Data
+
+We will use the `airquality` dataset that you have as part of your R installation. 
+Read the `airquality` data using the `data.frame()` function and save it as `air`.
+
+```{r, "Step 1"}
+# Write your code below.
+air <- data.frame(airquality)
+
+
+```
+
+---
+
+# Step 2 - Clean the Data
+
+After you load the data, there will be some NA values in the data. 
+You need to figure out what to do about those nasty NAs. Google is your friend. 
+Use Google actively to find a way to get rid of NAs using R. 
+
+**HINT:** Find columns that include NA values first 
+(use `colSums()` function, then replace NAs with the mean value of these columns).
+
+Optional: If you want to implement a better approaches to deal with missing data, 
+"multiple imputation" would be where you should go.   
+You can check sources like:
+
+ - https://gking.harvard.edu/amelia
+ - http://cran.revolutionanalytics.com/web/packages/mitools/index.html
+
+```{r, "Step 2"}
+# Write your code below.
+sum(is.na(air$Ozone))
+sum(is.na(air$Solar.R))
+sum(is.na(air$Wind))
+sum(is.na(air$Temp))
+sum(is.na(air$Month))
+sum(is.na(air$Day))
+# only the Ozone and Solar.R columns have NA values present
+
+# Replacing NAs with the mean value of air$Ozone and air$Solar.R for each respective column.
+air$Ozone[which(is.na(air$Ozone))] <- round(mean(air$Ozone[which(!is.na(air$Ozone))]))
+air$Solar.R[which(is.na(air$Solar.R))] <- round(mean(air$Solar.R[which(!is.na(air$Solar.R))]))
+
+
+```
+
+---
+
+
+# Step 3 - Understand the data distribution
+
+Create the following visualizations:
+
+ - Histograms for each of the variables
+ - Boxplot for `Ozone`, and boxplots for different `wind` values 
+ (round `wind` to get a good number of “buckets”) 
+ 
+**HINT:** you can create one graph with `Ozone` as X-axis and `Wind` as Y-axis. 
+Also, you can create two graphs (one with `Ozone` values on the Y-axis, and 
+another one with Y-axis value is rounded value of `Wind`). In this case, you need 
+to create a fake grouping variable `(x = factor(0))`.
+
+```{r, "Step 3"}
+# Write your code below.
+ozone_hist <- ggplot(air, aes(Ozone)) +
+        geom_histogram() +
+        labs(title = "Ozone") +
+        xlab('Ozone (ppb)') +
+        ylab('Count')
+ozone_hist
+
+solar_hist <- ggplot(air, aes(Solar.R)) +
+        geom_histogram() +
+        labs(title = 'Solar Radiation') +
+        xlab('Solar Radiation (Langleys)') +
+        ylab('Count')
+solar_hist
+
+wind_hist <- ggplot(air, aes(Wind)) +
+        geom_histogram() +
+        labs(title = 'Wind') +
+        xlab('Average Wind Speed (mph)') +
+        ylab('Count')
+wind_hist
+
+temp_hist <- ggplot(air, aes(Temp)) +
+        geom_histogram() +
+        labs(title = 'Temperature') +
+        xlab('Maximum Daily Temperature (F)') +
+        ylab('Count')
+temp_hist
+
+month_hist <- ggplot(air, aes(Month)) +
+        geom_histogram() +
+        labs(title = 'Month') +
+        xlab('Month') +
+        ylab('Count')
+month_hist
+
+day_hist <- ggplot(air, aes(Day)) +
+        geom_histogram() +
+        labs(title = 'Days') +
+        xlab('Calendar Day') +
+        ylab('Count')
+day_hist
+
+# Boxplot
+boxplot <- ggplot(air, aes(x = Ozone, y = round(Wind))) +
+        geom_boxplot() +
+        labs(title = "Wind vs. Ozone Boxplot") +
+        xlab('Ozone (ppb)') +
+        ylab('Average Wind Speed (mph)')
+boxplot
+
+boxplot_2 <- ggplot(air, aes(x = factor(0), y = Ozone)) +
+        geom_boxplot() +
+        labs(title = "Ozone Boxplot") +
+        xlab('') +
+        ylab('Ozone (ppb)')
+boxplot_2
+
+boxplot_3 <- ggplot(air, aes(x = factor(0), y = round(Wind))) +
+        geom_boxplot() +
+        labs(title = "Wind") +
+        xlab('') +
+        ylab('Wind (mph)')
+boxplot_3                            
+                           
+
+```
+
+---
+
+# Step 4 - Explore how the data changes over time
+
+First, create the appropriate dates (this data was from 1973). 
+Then create line charts for `Ozone`, `Temp`, `Wind` and `Solar.R` 
+(one line chart for each, and then one chart with 4 lines, each variable having a different color). 
+
+**HINT:** 
+
+1. Combine (use `paste()` function) 1973 with the `Month` and `Day` columns,
+using "/" in between
+2. Use `as.Date()` function to transform the value to "Date" format and create 
+a `Date` column to record this value. Use `?as.Date` to find example use of this function.
+
+Note that for the chart with 4 lines, you need to think about how to effectively use the y-axis. 
+
+**HINT:** 
+You need to "melt" the columns so that it becomes "long" format. You can either 
+use the `melt()` function or use the `gather()` from the "tidyr" package for the process. 
+Also, compared to other values, the `Wind` values are too small, 
+so they are close to the x-axis. You need to multiply `Wind` by 10 to address this problem. 
+
+The correct result should look like this:
+![Step 4 Line Graph](data/week3hw1.PNG)
+
+```{r, "Step 4"}
+# Write your code below.
+air$Date <- paste(air$Month, '/', air$Day, '/', 1973) %>% 
+        as.Date(format = '%m / %d / %Y')
+
+line_ozone <- ggplot(air, aes(x = Date, y = Ozone)) +
+        geom_line() +
+        labs(title = 'Ozone Levels in 1973 May - Oct') +
+        xlab('Date') +
+        ylab('Ozone (ppb)')
+line_ozone
+
+line_temp <- ggplot(air, aes(x = Date, y = Temp)) +
+        geom_line() +
+        labs(title = 'Temperature Levels in 1973 May - Oct') +
+        xlab('Date') +
+        ylab('Temperature (F)')
+line_temp
+
+line_wind <- ggplot(air, aes(x = Date, y = Wind)) +
+        geom_line() +
+        labs(title = 'Wind Speeds in 1973 May - Oct') +
+        xlab('Date') +
+        ylab('Average Wind Speed (mph)')
+line_wind
+
+line_solar <- ggplot(air, aes(x = Date, y = Solar.R)) +
+        geom_line() +
+        labs(title = 'Solar Radiation Levels in 1973 May - Oct') +
+        xlab('Date') +
+        ylab('Solar Radiaiton (Langleys)')
+line_solar
+
+library(tidyr)
+
+air_long <- air
+air_long$Wind <- air_long$Wind * 10
+air_long <- air_long %>%
+        gather("Measure", "Value", 1:4)
+
+line_combined <- ggplot(air_long, aes(x = Date, y = Value, group = Measure, color = Measure)) +
+        geom_line() +
+        labs(title = "Combined Weather Measurements in 1973 May - Oct",
+             caption = "Wind scaled up by 10 for readability purposes.")
+
+line_combined
+```
+ 
+
+# Step 5: Look at all the data via a heatmap
+
+Create a heatmap, with each day (using dates) along the x-axis and 
+`Ozone`, `Temp`, `Wind` and `Solar.r` along the y-axis.
+
+Note that you need to figure out how to show the relative change equally across 
+all the variables. 
+
+**HINTS:** 
+- You may find this post helpful:
+- https://learnr.wordpress.com/2010/01/26/ggplot2-quick-heatmap-plotting/
+- Melt the original table to make a long format before visualization using `geom_tile()`
+
+Remember, your programming skills will improve as much as you struggle and 
+put effort in them.
+
+The correct result should look like this:
+![Step 4 Line Graph](data/week3hw2.PNG)
+
+```{r, "Step 5"}
+# Write your code below.
+heatmap <- ggplot(air_long, aes(x = Date, y = Measure)) +
+        geom_tile(aes(fill = Value)) +
+        scale_fill_gradient(low = 'white', high = 'blue')
+
+heatmap
+
+```
+
+# Step 6: Look at all the data via a scatter chart
+
+Create a scatter chart, with:
+ - the x-axis representing the `Wind`
+ - the y-axis representing the `Temp`
+ - the size of each dot representing the `Ozone`
+ - the color representing `Solar.R`
+
+```{r, "Step 6"}
+# Write your code below.
+scatter <- ggplot(air, aes(x = Wind, y = Temp, size = Ozone, color = Solar.R)) +
+        geom_point() +
+        scale_color_gradient(low = 'green', high = 'red') +
+        labs(title = 'Weather Data for New York City May - Oct 1973',
+             subtitle = 'Temparture vs. Wind')
+
+scatter
+
+```
+
+# Step 7: Final analysis
+### You MUST answer to these questions in your compiled file.
+
+Do you see any patterns after exploring the data?
+
+> [Wind speed inversely correlates with temperature, as days with high wind speed
+have low temperatures and vice versa. Ozone, solar radiation, and temperature all
+directly correlated, as days with higher temperatures also have high ozone and solar
+radiation levels.]
+
+What was the most useful visualization?
+
+> [The scatter plot was the most useful since it effectively combined all the variables
+into one plot and allowed for easy interpretation, unlike the combined line graph which
+had all the datapoints overlapping and was hard to read. The heatmap was only 
+slightly worse than the scatter plot.]
